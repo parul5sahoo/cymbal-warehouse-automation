@@ -1707,6 +1707,98 @@
       color: var(--text-tertiary);
       margin-bottom: 4px;
     }
+
+    /* Dreaming & Reflection Section Styles */
+    .mb-dream-card {
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(0, 0, 0, 0) 100%);
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      border-radius: 10px;
+      padding: 16px 18px;
+      box-shadow: 0 1px 4px rgba(168, 85, 247, 0.08);
+      position: relative;
+    }
+    .mb-dream-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 12px 0 14px 0;
+    }
+    .mb-dream-metric-box {
+      background: var(--bg-surface-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .mb-dream-metric-val {
+      font-family: 'Fira Code', monospace;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #9333ea;
+    }
+    .mb-epiphany-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-left: 3px solid #a855f7;
+      border-radius: 0 8px 8px 0;
+      padding: 10px 12px;
+      margin-top: 8px;
+      transition: all 0.15s ease;
+    }
+    .mb-epiphany-item:hover {
+      border-color: #a855f7;
+      box-shadow: 0 2px 6px rgba(168, 85, 247, 0.1);
+    }
+    .mb-epiphany-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .mb-epiphany-title {
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--text-primary);
+    }
+    .mb-epiphany-badge {
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(168, 85, 247, 0.15);
+      color: #9333ea;
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      font-family: 'Fira Code', monospace;
+    }
+    .mb-epiphany-desc {
+      font-size: 11.5px;
+      color: var(--text-secondary);
+      line-height: 1.45;
+      margin-bottom: 6px;
+    }
+    .mb-epiphany-action {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      background: var(--bg-surface-subtle);
+      padding: 5px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border-subtle);
+    }
+    .mb-dream-revision-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(168, 85, 247, 0.15);
+      color: #9333ea;
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      letter-spacing: 0.04em;
+    }
   </style>
 </head>
 <body>
@@ -2484,12 +2576,15 @@
     let memoryBankProfileCache = null;
     let memoryBankRevisionsCache = null;
     let memoryBankBufferCount = 2;
+    let memoryBankDreamCache = null;
+    let isDreamingActive = false;
 
     async function loadMemoryBankData() {
       try {
-        const [profRes, revRes] = await Promise.all([
+        const [profRes, revRes, dreamRes] = await Promise.all([
           fetch(`${baseURL}/api/memory_bank/profiles?user_id=TECH-402`),
-          fetch(`${baseURL}/api/memory_bank/revisions?memory_name=projects/526827734705/locations/us-central1/reasoningEngines/8594036320127418368/memories/881173220072357888`)
+          fetch(`${baseURL}/api/memory_bank/revisions?memory_name=projects/526827734705/locations/us-central1/reasoningEngines/8594036320127418368/memories/881173220072357888`),
+          fetch(`${baseURL}/api/memory_bank/dream/status?memory_name=projects/526827734705/locations/us-central1/reasoningEngines/8594036320127418368/memories/881173220072357888`)
         ]);
         if (profRes.ok) {
           const profData = await profRes.json();
@@ -2499,8 +2594,37 @@
           const revData = await revRes.json();
           memoryBankRevisionsCache = revData.revisions;
         }
+        if (dreamRes.ok) {
+          memoryBankDreamCache = await dreamRes.json();
+        }
       } catch (e) {
         console.warn("Failed fetching memory bank data:", e);
+      }
+    }
+
+    async function triggerMemoryDreamCycle() {
+      if (isDreamingActive) return;
+      isDreamingActive = true;
+      if (activeTab === "MEMORY_BANK") renderMemoryBankTab();
+      try {
+        const res = await fetch(`${baseURL}/api/memory_bank/dream`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            memory_name: "projects/526827734705/locations/us-central1/reasoningEngines/8594036320127418368/memories/881173220072357888",
+            scope: { user_id: "TECH-402", warehouse_id: "stackbox_austin_1", zone: "Zone B - Aisle 4" },
+            model_tier: "gemini-3.5-flash-lite",
+            force_run: true
+          })
+        });
+        if (res.ok) {
+          await loadMemoryBankData();
+        }
+      } catch (e) {
+        alert("Dream cycle trigger failed: " + e.message);
+      } finally {
+        isDreamingActive = false;
+        if (activeTab === "MEMORY_BANK") renderMemoryBankTab();
       }
     }
 
@@ -2611,6 +2735,54 @@
 
       const revisions = memoryBankRevisionsCache || [];
       const bufferPct = Math.min(100, Math.round((memoryBankBufferCount / 5) * 100));
+
+      const dreamState = (memoryBankDreamCache && memoryBankDreamCache.dream_state) || {
+        status: "CONSOLIDATED",
+        active_model: "gemini-3.5-flash-lite",
+        cycle_count: 3,
+        unreflected_events_processed: 14,
+        cost_usd: 0.000426
+      };
+      const epiphanies = (memoryBankDreamCache && memoryBankDreamCache.epiphanies) || [
+        {
+          insight_id: "DREAM-EPIPHANY-001",
+          category: "PREDICTIVE_MAINTENANCE",
+          title: "CV-02 Roller Bearing Wear Post-Jam",
+          description: "Cross-session analysis reveals CV-02 motor temperature rose 14% faster in shift 2 after Error 4042 was cleared. Roller bracket 7 exhibits recurring micro-vibrations (8.2 Hz) correlated with high-speed pallet handoffs.",
+          confidence_score: 0.94,
+          recommended_action: "Schedule preemptive roller bearing lubrication and alignment check before 18:00 high-velocity batch."
+        },
+        {
+          insight_id: "DREAM-EPIPHANY-002",
+          category: "CROSS_OPERATOR_PATTERN",
+          title: "Aisle 4 Multi-Operator Routing Bottleneck",
+          description: "Synthesized observations between Dave Miller (TECH-402) and Elena Rostova (OPERATOR-101): AGV PickerBot-Alpha bypass path frequently conflicts with manual pallet staging at Bay Q.",
+          confidence_score: 0.89,
+          recommended_action: "Designate dynamic temporary 3-meter exclusion zone when PickerBot-Alpha operates in Aisle 4 bypass mode."
+        },
+        {
+          insight_id: "DREAM-EPIPHANY-003",
+          category: "PREFERENCE_ADAPTATION",
+          title: "Operator Alert Verbosity Calibration",
+          description: "Operator Dave Miller consistently requests full telemetry hex dumps and RPM graphs rather than conversational summaries during conveyor incidents.",
+          confidence_score: 0.98,
+          recommended_action: "Keep preferred_alert_verbosity locked to 'technical' with immediate raw sensor telemetry payloads."
+        }
+      ];
+
+      let dreamBadgeLabel = "💤 Idle";
+      let dreamBadgeStyle = "background:rgba(0,0,0,0.05); color:var(--text-tertiary); border:1px solid var(--border-subtle);";
+      if (isDreamingActive || dreamState.status === "DREAMING") {
+        dreamBadgeLabel = "🌙 Dreaming...";
+        dreamBadgeStyle = "background:rgba(0, 240, 255, 0.12); color:#0284c7; border:1px solid #0284c7;";
+      } else if (dreamState.status === "CONSOLIDATED") {
+        dreamBadgeLabel = "✨ Consolidated";
+        dreamBadgeStyle = "background:rgba(168, 85, 247, 0.15); color:#9333ea; border:1px solid rgba(168, 85, 247, 0.4);";
+      }
+
+      const dreamCostFormatted = currencyMode === "INR"
+        ? `₹ ${(dreamState.cost_usd * USD_TO_INR_RATE).toFixed(4)}`
+        : `$ ${(dreamState.cost_usd).toFixed(6)}`;
 
       let html = `
         <div class="mb-container">
@@ -2723,7 +2895,63 @@
             </div>
           </div>
 
-          <!-- Section 4: Memory Revisions & Lineage -->
+          <!-- Section 4: Autonomous Dreaming & Reflection -->
+          <div>
+            <div class="mb-section-header">
+              <div class="mb-section-title">
+                <span>Autonomous Dreaming & Reflection</span>
+              </div>
+              <span class="mb-badge-pill" style="${dreamBadgeStyle}">${dreamBadgeLabel}</span>
+            </div>
+            <div class="mb-dream-card">
+              <div style="font-size:12px; color:var(--text-secondary); line-height:1.45;">
+                Background reflection engine leverages lightweight model <code style="font-family:'Fira Code'; font-size:11px; color:#9333ea; background:rgba(168,85,247,0.08); padding:2px 5px; border-radius:4px;">${dreamState.active_model || 'gemini-3.5-flash-lite'}</code> to synthesize cross-session insights, detect mechanical drift, and produce immutable memory revisions with zero operator latency.
+              </div>
+
+              <!-- Metrics Strip -->
+              <div class="mb-dream-metrics-grid">
+                <div class="mb-dream-metric-box">
+                  <span class="mb-meta-label">Dream Cycles</span>
+                  <span class="mb-dream-metric-val">#${dreamState.cycle_count || 0}</span>
+                </div>
+                <div class="mb-dream-metric-box">
+                  <span class="mb-meta-label">Events Reflected</span>
+                  <span class="mb-dream-metric-val">${dreamState.unreflected_events_processed || 0}</span>
+                </div>
+                <div class="mb-dream-metric-box">
+                  <span class="mb-meta-label">Consolidation Cost</span>
+                  <span class="mb-dream-metric-val" style="color:var(--accent-green);">${dreamCostFormatted}</span>
+                </div>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-tertiary);">
+                  Synthesized Epiphanies (${epiphanies.length})
+                </span>
+                <button class="mb-btn" style="border-color:rgba(168,85,247,0.4); color:#9333ea; font-size:11px; padding:4px 10px;" onclick="triggerMemoryDreamCycle()" ${isDreamingActive ? 'disabled' : ''}>
+                  ${isDreamingActive ? '🌙 Dreaming...' : '🌙 Trigger Dream Cycle'}
+                </button>
+              </div>
+
+              <!-- Epiphanies Feed -->
+              <div class="mb-epiphanies-feed">
+                ${epiphanies.map(ep => `
+                  <div class="mb-epiphany-item">
+                    <div class="mb-epiphany-header">
+                      <div class="mb-epiphany-title">${escapeHTML(ep.title)}</div>
+                      <span class="mb-epiphany-badge">${ep.category}</span>
+                    </div>
+                    <div class="mb-epiphany-desc">${escapeHTML(ep.description)}</div>
+                    <div class="mb-epiphany-action">
+                      <strong style="color:#9333ea;">Action:</strong> ${escapeHTML(ep.recommended_action)}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 5: Memory Revisions & Lineage -->
           <div>
             <div class="mb-section-header">
               <div class="mb-section-title">Memory Revisions & Lineage (${revisions.length})</div>
@@ -2732,11 +2960,16 @@
             <div class="mb-revisions-list">
               ${revisions.map((rev, idx) => {
                 const isCurrent = idx === 0;
+                const isDream = (rev.labels && rev.labels.source === "dream_engine") || (rev.fact && rev.fact.includes("[AUTONOMOUS DREAM CONSOLIDATION]"));
                 const timeStr = rev.create_time ? new Date(rev.create_time).toLocaleTimeString() : "--";
                 return `
-                  <div class="mb-revision-item ${isCurrent ? 'current' : ''}">
+                  <div class="mb-revision-item ${isCurrent ? 'current' : ''}" style="${isDream ? 'border-left: 3px solid #a855f7; background:linear-gradient(to right, rgba(168, 85, 247, 0.04), var(--bg-surface));' : ''}">
                     <div class="mb-revision-top">
-                      <span>REV #${rev.revision_id.slice(-6)} ${isCurrent ? '<strong style="color:var(--accent-coral); font-weight:700;">(ACTIVE)</strong>' : ''}</span>
+                      <div style="display:flex; align-items:center; gap:6px;">
+                        <span>REV #${rev.revision_id.slice(-6)}</span>
+                        ${isCurrent ? '<strong style="color:var(--accent-coral); font-weight:700;">(ACTIVE)</strong>' : ''}
+                        ${isDream ? '<span class="mb-dream-revision-badge">✨ DREAM CONSOLIDATION</span>' : ''}
+                      </div>
                       <span>⏱️ ${timeStr}</span>
                     </div>
                     <div class="mb-revision-fact">${escapeHTML(rev.fact)}</div>

@@ -339,6 +339,17 @@ class RollbackMemoryRequest(BaseModel):
     target_revision_id: str = "881173220072357888"
 
 
+class TriggerDreamRequest(BaseModel):
+    memory_name: str = memory_bank_service.TARGET_MEMORY_NAME
+    scope: Optional[Dict[str, str]] = {"user_id": "TECH-402", "warehouse_id": "stackbox_austin_1", "zone": "Zone B"}
+    model_tier: str = "gemini-3.5-flash-lite"
+    force_run: bool = False
+
+
+class FleetDreamRequest(BaseModel):
+    model_tier: str = "gemini-3.5-flash-lite"
+
+
 @app.get("/api/memory_bank/profiles")
 def get_memory_bank_profile(user_id: str = "TECH-402"):
     """Retrieve structured operator profile from Memory Bank."""
@@ -388,6 +399,29 @@ def post_memory_bank_rollback(req: RollbackMemoryRequest):
         memory_name=req.memory_name,
         target_revision_id=req.target_revision_id
     )
+
+
+@app.post("/api/memory_bank/dream")
+def post_memory_bank_dream(req: TriggerDreamRequest):
+    """Trigger an offline memory dreaming and background reflection cycle."""
+    return memory_bank_service.trigger_dream_cycle(
+        memory_name=req.memory_name,
+        scope=req.scope,
+        model_tier=req.model_tier,
+        force_run=req.force_run
+    )
+
+
+@app.get("/api/memory_bank/dream/status")
+def get_memory_bank_dream_status(memory_name: str = memory_bank_service.TARGET_MEMORY_NAME):
+    """Retrieve current dreaming cycle status, epiphanies, and reflection telemetry."""
+    return memory_bank_service.get_dreaming_status(memory_name=memory_name)
+
+
+@app.post("/api/admin/memory_banks/dream_fleet")
+def post_admin_dream_fleet(req: FleetDreamRequest):
+    """Dispatch fleet-wide dreaming cycle across all operator memory banks."""
+    return admin_service.trigger_fleet_dreaming(model_tier=req.model_tier)
 
 
 # ==============================================================================

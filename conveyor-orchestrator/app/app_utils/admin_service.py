@@ -445,58 +445,98 @@ def get_user_sessions() -> List[Dict[str, Any]]:
     return _SESSION_REGISTRY
 
 
+_MEMORY_BANK_FLEET_DATA = [
+    {
+        "memory_id": "881173220072357888",
+        "resource_name": "projects/526827734705/locations/us-central1/reasoningEngines/8594036320127418368/memories/881173220072357888",
+        "owner": "Dave Miller (TECH-402)",
+        "role": "Senior Conveyor Technician",
+        "revisions_count": 5,
+        "buffer_count": 2,
+        "buffer_limit": 5,
+        "sync_status": "SYNCED",
+        "dream_status": "CONSOLIDATED",
+        "last_synthesis": "4m ago",
+        "last_dream_cycle": "Just now",
+        "dream_insights_count": 3,
+        "latest_dream_epiphany": "CV-02 roller bracket 7 exhibits recurring micro-vibrations (8.2 Hz); preemptive bearing check scheduled.",
+        "latest_fact": "Operator Dave Miller confirmed full LOTO Level-3 qualification; cleared Conveyor CV-02 Error 4042 Thermal Jam Recovery."
+    },
+    {
+        "memory_id": "881173220072357901",
+        "resource_name": "projects/526827734705/locations/us-central1/reasoningEngines/8594036320127418368/memories/881173220072357901",
+        "owner": "Elena Rostova (OPERATOR-101)",
+        "role": "Warehouse Floor Lead",
+        "revisions_count": 3,
+        "buffer_count": 1,
+        "buffer_limit": 5,
+        "sync_status": "SYNCED",
+        "dream_status": "CONSOLIDATED",
+        "last_synthesis": "18m ago",
+        "last_dream_cycle": "12m ago",
+        "dream_insights_count": 2,
+        "latest_dream_epiphany": "Cross-referenced Aisle 4 pallet staging bottlenecks with high-velocity SKU-991 cycle handoffs.",
+        "latest_fact": "Operator Elena Rostova initiated automated cycle count for high-velocity SKU-991; isolated pallet to Aisle 9 Bay Q."
+    },
+    {
+        "memory_id": "881173220072357915",
+        "resource_name": "projects/526827734705/locations/us-central1/reasoningEngines/8594036320127418368/memories/881173220072357915",
+        "owner": "Marcus Vance (SAFETY-LEAD-88)",
+        "role": "EHS Compliance Officer",
+        "revisions_count": 8,
+        "buffer_count": 4,
+        "buffer_limit": 5,
+        "sync_status": "NEAR_FLUSH",
+        "dream_status": "IDLE",
+        "last_synthesis": "7m ago",
+        "last_dream_cycle": "45m ago",
+        "dream_insights_count": 1,
+        "latest_dream_epiphany": "Correlated CCTV posture audit trends with AGV pedestrian boundary violations during shift crossovers.",
+        "latest_fact": "Audited CCTV feed camera-04 for PPE compliance; verified 10-meter AGV pedestrian exclusion zones in Zone H."
+    },
+    {
+        "memory_id": "881173220072357922",
+        "resource_name": "projects/526827734705/locations/us-central1/reasoningEngines/8594036320127418368/memories/881173220072357922",
+        "owner": "Aria Chen (MAINT-205)",
+        "role": "Robotics & AGV Specialist",
+        "revisions_count": 4,
+        "buffer_count": 0,
+        "buffer_limit": 5,
+        "sync_status": "IDLE",
+        "dream_status": "CONSOLIDATED",
+        "last_synthesis": "31m ago",
+        "last_dream_cycle": "22m ago",
+        "dream_insights_count": 2,
+        "latest_dream_epiphany": "Synthesized AGV battery consumption curves across rerouted bypass paths during conveyor downtime.",
+        "latest_fact": "Re-routed AGV-04 and AGV-07 around jammed CV-02 junction; updated bypass transit telemetry."
+    }
+]
+
+
 def get_memory_bank_fleet() -> List[Dict[str, Any]]:
-    """Inspect multi-tenant GEAP Memory Bank fleet status."""
-    return [
-        {
-            "memory_id": "881173220072357888",
-            "resource_name": "projects/526827734705/locations/us-central1/reasoningEngines/8594036320127418368/memories/881173220072357888",
-            "owner": "Dave Miller (TECH-402)",
-            "role": "Senior Conveyor Technician",
-            "revisions_count": 4,
-            "buffer_count": 2,
-            "buffer_limit": 5,
-            "sync_status": "SYNCED",
-            "last_synthesis": "4m ago",
-            "latest_fact": "Operator Dave Miller confirmed full LOTO Level-3 qualification; cleared Conveyor CV-02 Error 4042 Thermal Jam Recovery."
-        },
-        {
-            "memory_id": "881173220072357901",
-            "resource_name": "projects/526827734705/locations/us-central1/reasoningEngines/8594036320127418368/memories/881173220072357901",
-            "owner": "Elena Rostova (OPERATOR-101)",
-            "role": "Warehouse Floor Lead",
-            "revisions_count": 2,
-            "buffer_count": 1,
-            "buffer_limit": 5,
-            "sync_status": "SYNCED",
-            "last_synthesis": "18m ago",
-            "latest_fact": "Operator Elena Rostova initiated automated cycle count for high-velocity SKU-991; isolated pallet to Aisle 9 Bay Q."
-        },
-        {
-            "memory_id": "881173220072357915",
-            "resource_name": "projects/526827734705/locations/us-central1/reasoningEngines/8594036320127418368/memories/881173220072357915",
-            "owner": "Marcus Vance (SAFETY-LEAD-88)",
-            "role": "EHS Compliance Officer",
-            "revisions_count": 7,
-            "buffer_count": 4,
-            "buffer_limit": 5,
-            "sync_status": "NEAR_FLUSH",
-            "last_synthesis": "7m ago",
-            "latest_fact": "Audited CCTV feed camera-04 for PPE compliance; verified 10-meter AGV pedestrian exclusion zones in Zone H."
-        },
-        {
-            "memory_id": "881173220072357922",
-            "resource_name": "projects/526827734705/locations/us-central1/reasoningEngines/8594036320127418368/memories/881173220072357922",
-            "owner": "Aria Chen (MAINT-205)",
-            "role": "Robotics & AGV Specialist",
-            "revisions_count": 3,
-            "buffer_count": 0,
-            "buffer_limit": 5,
-            "sync_status": "IDLE",
-            "last_synthesis": "31m ago",
-            "latest_fact": "Re-routed AGV-04 and AGV-07 around jammed CV-02 junction; updated bypass transit telemetry."
-        }
-    ]
+    """Inspect multi-tenant GEAP Memory Bank fleet status with dreaming telemetry."""
+    return _MEMORY_BANK_FLEET_DATA
+
+
+def trigger_fleet_dreaming(model_tier: str = "gemini-3.5-flash-lite") -> Dict[str, Any]:
+    """Dispatches an asynchronous fleet-wide dreaming and consolidation sweep across all operator memory banks."""
+    from app.app_utils import memory_bank_service
+    memory_bank_service.trigger_dream_cycle(model_tier=model_tier, force_run=True)
+
+    for mb in _MEMORY_BANK_FLEET_DATA:
+        mb["dream_status"] = "CONSOLIDATED"
+        mb["last_dream_cycle"] = "Just now"
+        mb["revisions_count"] += 1
+        mb["buffer_count"] = 0
+        mb["sync_status"] = "SYNCED"
+
+    return {
+        "status": "success",
+        "action": "fleet_dream_sweep",
+        "model_used": model_tier,
+        "memory_banks_consolidated": len(_MEMORY_BANK_FLEET_DATA),
+        "fleet": _MEMORY_BANK_FLEET_DATA
+    }
 
 
 def get_security_audit_log() -> List[Dict[str, Any]]:

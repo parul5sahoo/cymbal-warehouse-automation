@@ -156,6 +156,55 @@ _EVENT_INGESTION_STREAMS: Dict[str, List[Dict[str, Any]]] = {
     ]
 }
 
+# ==============================================================================
+# Autonomous Memory Bank Dreaming State & Epiphanies
+# ==============================================================================
+
+_LOCAL_DREAM_EPIPHANIES: List[Dict[str, Any]] = [
+    {
+        "insight_id": "DREAM-EPIPHANY-001",
+        "category": "PREDICTIVE_MAINTENANCE",
+        "title": "CV-02 Roller Bearing Wear Post-Jam",
+        "description": "Cross-session analysis reveals CV-02 motor temperature rose 14% faster in shift 2 after Error 4042 was cleared. Roller bracket 7 exhibits recurring micro-vibrations (8.2 Hz) correlated with high-speed pallet handoffs.",
+        "confidence_score": 0.94,
+        "recommended_action": "Schedule preemptive roller bearing lubrication and alignment check before 18:00 high-velocity batch.",
+        "affected_equipment_or_zone": "Zone B - Aisle 4 / CV-02",
+        "timestamp": "2026-09-20T11:00:00Z"
+    },
+    {
+        "insight_id": "DREAM-EPIPHANY-002",
+        "category": "CROSS_OPERATOR_PATTERN",
+        "title": "Aisle 4 Multi-Operator Routing Bottleneck",
+        "description": "Synthesized observations between Dave Miller (TECH-402) and Elena Rostova (OPERATOR-101): AGV PickerBot-Alpha bypass path frequently conflicts with manual pallet staging at Bay Q.",
+        "confidence_score": 0.89,
+        "recommended_action": "Designate dynamic temporary 3-meter exclusion zone when PickerBot-Alpha operates in Aisle 4 bypass mode.",
+        "affected_equipment_or_zone": "Zone B - Bay Q",
+        "timestamp": "2026-09-20T11:02:15Z"
+    },
+    {
+        "insight_id": "DREAM-EPIPHANY-003",
+        "category": "PREFERENCE_ADAPTATION",
+        "title": "Operator Alert Verbosity Calibration",
+        "description": "Operator Dave Miller consistently requests full telemetry hex dumps and RPM graphs rather than conversational summaries during conveyor incidents.",
+        "confidence_score": 0.98,
+        "recommended_action": "Keep preferred_alert_verbosity locked to 'technical' with immediate raw sensor telemetry payloads.",
+        "affected_equipment_or_zone": "TECH-402 Profile",
+        "timestamp": "2026-09-20T11:03:30Z"
+    }
+]
+
+_LOCAL_DREAM_STATE: Dict[str, Any] = {
+    "status": "CONSOLIDATED",  # "IDLE", "DREAMING", "CONSOLIDATED"
+    "active_model": "gemini-3.5-flash-lite",
+    "last_cycle_time": "2026-09-20T11:05:00Z",
+    "cycle_count": 3,
+    "unreflected_events_processed": 14,
+    "epiphanies_count": len(_LOCAL_DREAM_EPIPHANIES),
+    "tokens_consumed": 2840,
+    "cost_usd": 0.000426,
+    "mode": "offline_asynchronous_reflection"
+}
+
 
 # ==============================================================================
 # 2. Service Functions
@@ -361,4 +410,95 @@ def rollback_memory(
         "target_revision_id": target_revision_id,
         "new_active_revision_id": rollback_rev_id,
         "restored_fact": target_rev["fact"]
+    }
+
+
+def trigger_dream_cycle(
+    memory_name: str = TARGET_MEMORY_NAME,
+    scope: Optional[Dict[str, str]] = None,
+    model_tier: str = "gemini-3.5-flash-lite",
+    force_run: bool = False
+) -> Dict[str, Any]:
+    """Triggers an offline Memory Bank Dreaming cycle for cross-session reflection and fact consolidation.
+    
+    In GEAP, this maps to client.memory_banks.memories.dream(name=..., config={'model': model_tier, 'deduplicate': True}).
+    Synthesizes long-term operational insights, produces a new revision tagged with source: 'dream_engine',
+    and updates operator mental models without active user prompting.
+    """
+    if scope is None:
+        scope = {"user_id": "TECH-402", "warehouse_id": "stackbox_austin_1", "zone": "Zone B"}
+
+    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    new_cycle_num = _LOCAL_DREAM_STATE.get("cycle_count", 0) + 1
+    _LOCAL_DREAM_STATE["cycle_count"] = new_cycle_num
+    _LOCAL_DREAM_STATE["status"] = "CONSOLIDATED"
+    _LOCAL_DREAM_STATE["last_cycle_time"] = now_iso
+    _LOCAL_DREAM_STATE["active_model"] = model_tier
+
+    # 1. Generate a new synthesized dream epiphany based on cycle count
+    new_epiphany_id = f"DREAM-EPIPHANY-{new_cycle_num:03d}"
+    new_epiphany = {
+        "insight_id": new_epiphany_id,
+        "category": "PREDICTIVE_MAINTENANCE",
+        "title": f"Cross-Shift Mechanical Resonance Analysis #{new_cycle_num}",
+        "description": "Autonomous dream reflection across multi-turn sessions identified recurrent high-frequency vibrational spikes on Conveyor CV-02 preceding Error 4042. Reconciled operator telemetry across shift handoffs.",
+        "confidence_score": 0.96,
+        "recommended_action": "Apply dynamic conveyor deceleration ramp at Zone B Aisle 4 switch junction to prevent roller bracket thermal friction build-up.",
+        "affected_equipment_or_zone": "Zone B - Aisle 4 / Conveyor CV-02",
+        "timestamp": now_iso
+    }
+    _LOCAL_DREAM_EPIPHANIES.insert(0, new_epiphany)
+    _LOCAL_DREAM_STATE["epiphanies_count"] = len(_LOCAL_DREAM_EPIPHANIES)
+    _LOCAL_DREAM_STATE["tokens_consumed"] += 840
+    _LOCAL_DREAM_STATE["cost_usd"] = round(_LOCAL_DREAM_STATE["cost_usd"] + 0.000126, 6)
+
+    # 2. Commit a new immutable memory revision tagged with source: 'dream_engine'
+    dream_rev_id = str(int(datetime.datetime.now().timestamp() * 1000))
+    dream_fact = (
+        f"[AUTONOMOUS DREAM CONSOLIDATION] Cross-session reflection for {scope.get('user_id', 'TECH-402')}: "
+        f"Consolidated 14 episodic events across 3 shifts. Reconciled CV-02 thermal telemetry with AGV PickerBot-Alpha "
+        f"bypass routing in Aisle 4. Preserved technical alert verbosity preference."
+    )
+    new_dream_revision = {
+        "name": f"{memory_name}/revisions/{dream_rev_id}",
+        "revision_id": dream_rev_id,
+        "create_time": now_iso,
+        "fact": dream_fact,
+        "extracted_memories": [
+            {"fact": f"Dream epiphany {new_epiphany_id}: Preemptive deceleration ramp recommended for CV-02 roller bracket 7."},
+            {"fact": "Reconciled multi-operator handoff between TECH-402 and OPERATOR-101 at Bay Q."},
+            {"fact": f"Offline consolidation executed via {model_tier} with zero operator interruption."}
+        ],
+        "labels": {
+            "source": "dream_engine",
+            "cycle_id": f"dream-cycle-{new_cycle_num}",
+            "model_tier": model_tier,
+            "consolidation_type": "CROSS_SESSION_REFLECTION"
+        }
+    }
+    _LOCAL_MEMORY_REVISIONS.insert(0, new_dream_revision)
+
+    logger.info(f"Memory Bank Dreaming cycle #{new_cycle_num} completed for {memory_name} via {model_tier}")
+
+    return {
+        "status": "success",
+        "action": "dream_consolidation",
+        "memory_name": memory_name,
+        "cycle_number": new_cycle_num,
+        "model_tier": model_tier,
+        "new_revision_id": dream_rev_id,
+        "synthesized_epiphany": new_epiphany,
+        "generated_memory": new_dream_revision,
+        "dream_state": _LOCAL_DREAM_STATE
+    }
+
+
+def get_dreaming_status(memory_name: str = TARGET_MEMORY_NAME) -> Dict[str, Any]:
+    """Retrieves current dreaming cycle status, epiphanies, and reflection telemetry."""
+    return {
+        "status": "success",
+        "memory_name": memory_name,
+        "dream_state": _LOCAL_DREAM_STATE,
+        "epiphanies": _LOCAL_DREAM_EPIPHANIES,
+        "latest_consolidated_revision": _LOCAL_MEMORY_REVISIONS[0] if _LOCAL_MEMORY_REVISIONS else None
     }
